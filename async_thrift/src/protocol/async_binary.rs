@@ -1,24 +1,25 @@
-use std::convert::{From, TryFrom};
 use async_trait::async_trait;
 use byteorder::{BigEndian, ByteOrder, WriteBytesExt};
+use std::convert::{From, TryFrom};
 
 use crate::errors::{Error, ProtocolError, ProtocolErrorKind};
 use crate::transport::{TAsyncReadTransport, TAsyncWriteTransport};
 
-use super::{TAsyncInputProtocol, TAsyncInputProtocolFactory, TAsyncOutputProtocol, TAsyncOutputProtocolFactory};
 use super::{
-    TFieldIdentifier, TListIdentifier,
-    TMapIdentifier, TMessageIdentifier,
-    TMessageType, TSetIdentifier,
-    TStructIdentifier, TType,
+    TAsyncInputProtocol, TAsyncInputProtocolFactory, TAsyncOutputProtocol,
+    TAsyncOutputProtocolFactory,
+};
+use super::{
+    TFieldIdentifier, TListIdentifier, TMapIdentifier, TMessageIdentifier, TMessageType,
+    TSetIdentifier, TStructIdentifier, TType,
 };
 
 const BINARY_PROTOCOL_VERSION_1: u32 = 0x80010000;
 
 #[derive(Debug)]
 pub struct TAsyncBinaryInputProtocol<T>
-    where
-        T: TAsyncReadTransport,
+where
+    T: TAsyncReadTransport,
 {
     strict: bool,
     pub transport: T,
@@ -29,9 +30,9 @@ pub struct TAsyncBinaryInputProtocol<T>
     buf8: [u8; 8],
 }
 
-impl<'a, T> TAsyncBinaryInputProtocol<T>
-    where
-        T: TAsyncReadTransport,
+impl<T> TAsyncBinaryInputProtocol<T>
+where
+    T: TAsyncReadTransport,
 {
     /// Create a `TBinaryInputProtocol` that reads bytes from `transport`.
     ///
@@ -51,22 +52,21 @@ impl<'a, T> TAsyncBinaryInputProtocol<T>
 
 #[derive(Debug)]
 pub struct TAsyncBinaryOutputProtocol<T>
-    where
-        T: TAsyncWriteTransport,
+where
+    T: TAsyncWriteTransport,
 {
     strict: bool,
     pub transport: T,
     // FIXME: do not make public; only public for testing!
-    buf1: [u8; 1],
+    //buf1: [u8; 1],
     buf2: [u8; 2],
     buf4: [u8; 4],
     buf8: [u8; 8],
 }
 
-
 impl<T> TAsyncBinaryOutputProtocol<T>
-    where
-        T: TAsyncWriteTransport,
+where
+    T: TAsyncWriteTransport,
 {
     /// Create a `TBinaryOutputProtocol` that writes bytes to `transport`.
     ///
@@ -76,7 +76,7 @@ impl<T> TAsyncBinaryOutputProtocol<T>
         TAsyncBinaryOutputProtocol {
             strict,
             transport,
-            buf1: [0; 1],
+            //buf1: [0; 1],
             buf2: [0; 2],
             buf4: [0; 4],
             buf8: [0; 8],
@@ -96,7 +96,10 @@ impl TAsyncBinaryInputProtocolFactory {
 }
 
 impl TAsyncInputProtocolFactory for TAsyncBinaryInputProtocolFactory {
-    fn create(&self, transport: Box<dyn TAsyncReadTransport + Send>) -> Box<dyn TAsyncInputProtocol + Send> {
+    fn create(
+        &self,
+        transport: Box<dyn TAsyncReadTransport + Send>,
+    ) -> Box<dyn TAsyncInputProtocol + Send> {
         Box::new(TAsyncBinaryInputProtocol::new(transport, true))
     }
 }
@@ -113,17 +116,20 @@ impl TAsyncBinaryOutputProtocolFactory {
 }
 
 impl TAsyncOutputProtocolFactory for TAsyncBinaryOutputProtocolFactory {
-    fn create(&self, transport: Box<dyn TAsyncWriteTransport + Send>) -> Box<dyn TAsyncOutputProtocol + Send> {
+    fn create(
+        &self,
+        transport: Box<dyn TAsyncWriteTransport + Send>,
+    ) -> Box<dyn TAsyncOutputProtocol + Send> {
         Box::new(TAsyncBinaryOutputProtocol::new(transport, true))
     }
 }
 
 #[async_trait]
 impl<T> TAsyncInputProtocol for TAsyncBinaryInputProtocol<T>
-    where
-        T: TAsyncReadTransport + std::marker::Send,
+where
+    T: TAsyncReadTransport + std::marker::Send,
 {
-    #[cfg_attr(feature = "cargo-clippy", allow(collapsible_if))]
+    #[cfg_attr(feature = "clippy", allow(collapsible_if))]
     async fn read_message_begin(&mut self) -> crate::Result<TMessageIdentifier> {
         self.transport.read(&mut self.buf4).await?;
 
@@ -164,9 +170,14 @@ impl<T> TAsyncInputProtocol for TAsyncBinaryInputProtocol<T>
                 let name = String::from_utf8(name_buf);
 
                 // read the rest of the fields
-                let message_type: TMessageType = self.read_byte().await.and_then(TryFrom::try_from)?;
+                let message_type: TMessageType =
+                    self.read_byte().await.and_then(TryFrom::try_from)?;
                 let sequence_number = self.read_i32().await?;
-                Ok(TMessageIdentifier::new(name.unwrap(), message_type, sequence_number))
+                Ok(TMessageIdentifier::new(
+                    name.unwrap(),
+                    message_type,
+                    sequence_number,
+                ))
             }
         }
     }
@@ -211,39 +222,40 @@ impl<T> TAsyncInputProtocol for TAsyncBinaryInputProtocol<T>
         let num_bytes = self.read_i32().await? as usize;
         let mut buf = vec![0u8; num_bytes];
         self.transport
-            .read(&mut buf).await
+            .read(&mut buf)
+            .await
             .map(|_| buf)
             .map_err(From::from)
     }
 
     async fn read_i8(&mut self) -> crate::Result<i8> {
-        self.transport.read(&mut self.buf1).await;
+        self.transport.read(&mut self.buf1).await?;
 
         Ok(self.buf1[0] as i8)
     }
 
     async fn read_i16(&mut self) -> crate::Result<i16> {
-        self.transport.read(&mut self.buf2).await;
+        self.transport.read(&mut self.buf2).await?;
 
-        Ok(BigEndian::read_i16(&mut self.buf2))
+        Ok(BigEndian::read_i16(&self.buf2))
     }
 
     async fn read_i32(&mut self) -> crate::Result<i32> {
-        self.transport.read(&mut self.buf4).await;
+        self.transport.read(&mut self.buf4).await?;
 
-        Ok(BigEndian::read_i32(&mut self.buf4))
+        Ok(BigEndian::read_i32(&self.buf4))
     }
 
     async fn read_i64(&mut self) -> crate::Result<i64> {
-        self.transport.read(&mut self.buf8).await;
+        self.transport.read(&mut self.buf8).await?;
 
-        Ok(BigEndian::read_i64(&mut self.buf8))
+        Ok(BigEndian::read_i64(&self.buf8))
     }
 
     async fn read_double(&mut self) -> crate::Result<f64> {
-        self.transport.read(&mut self.buf8).await;
+        self.transport.read(&mut self.buf8).await?;
 
-        Ok(BigEndian::read_f64(&mut self.buf8))
+        Ok(BigEndian::read_f64(&self.buf8))
     }
 
     async fn read_string(&mut self) -> crate::Result<String> {
@@ -288,7 +300,7 @@ impl<T> TAsyncInputProtocol for TAsyncBinaryInputProtocol<T>
     //
 
     async fn read_byte(&mut self) -> crate::Result<u8> {
-        self.transport.read(&mut self.buf1).await;
+        self.transport.read(&mut self.buf1).await?;
 
         Ok(self.buf1[0])
     }
@@ -296,8 +308,8 @@ impl<T> TAsyncInputProtocol for TAsyncBinaryInputProtocol<T>
 
 #[async_trait]
 impl<T> TAsyncOutputProtocol for TAsyncBinaryOutputProtocol<T>
-    where
-        T: TAsyncWriteTransport + std::marker::Send,
+where
+    T: TAsyncWriteTransport + std::marker::Send,
 {
     async fn write_message_begin(&mut self, identifier: &TMessageIdentifier) -> crate::Result<()> {
         if self.strict {
@@ -306,7 +318,7 @@ impl<T> TAsyncOutputProtocol for TAsyncBinaryOutputProtocol<T>
             // write u32
             let mut wtr = Vec::new();
             wtr.write_u32::<BigEndian>(header).unwrap();
-            self.transport.write(&wtr).await;
+            self.transport.write(&wtr).await?;
             //
             self.write_string(&identifier.name).await?;
             self.write_i32(identifier.sequence_number).await
@@ -340,7 +352,8 @@ impl<T> TAsyncOutputProtocol for TAsyncBinaryOutputProtocol<T>
             }));
         }
 
-        self.write_byte(field_type_to_u8(identifier.field_type)).await?;
+        self.write_byte(field_type_to_u8(identifier.field_type))
+            .await?;
         if let Some(id) = identifier.id {
             self.write_i16(id).await
         } else {
@@ -366,40 +379,40 @@ impl<T> TAsyncOutputProtocol for TAsyncBinaryOutputProtocol<T>
 
     async fn write_bytes(&mut self, b: &[u8]) -> crate::Result<()> {
         self.write_i32(b.len() as i32).await?;
-        self.transport.write(b).await;
+        self.transport.write(b).await?;
 
         Ok(())
     }
 
     async fn write_i8(&mut self, i: i8) -> crate::Result<()> {
-        self.transport.write(&[i as u8; 1]).await;
+        self.transport.write(&[i as u8; 1]).await?;
 
         Ok(())
     }
 
     async fn write_i16(&mut self, i: i16) -> crate::Result<()> {
         BigEndian::write_i16(&mut self.buf2, i);
-        self.transport.write(&self.buf2).await;
+        self.transport.write(&self.buf2).await?;
         Ok(())
     }
 
     async fn write_i32(&mut self, i: i32) -> crate::Result<()> {
         BigEndian::write_i32(&mut self.buf4, i);
-        self.transport.write(&self.buf4).await;
+        self.transport.write(&self.buf4).await?;
 
         Ok(())
     }
 
     async fn write_i64(&mut self, i: i64) -> crate::Result<()> {
         BigEndian::write_i64(&mut self.buf8, i);
-        self.transport.write(&self.buf8).await;
+        self.transport.write(&self.buf8).await?;
 
         Ok(())
     }
 
     async fn write_double(&mut self, d: f64) -> crate::Result<()> {
         BigEndian::write_f64(&mut self.buf8, d);
-        self.transport.write(&self.buf8).await;
+        self.transport.write(&self.buf8).await?;
 
         Ok(())
     }
@@ -409,7 +422,8 @@ impl<T> TAsyncOutputProtocol for TAsyncBinaryOutputProtocol<T>
     }
 
     async fn write_list_begin(&mut self, identifier: &TListIdentifier) -> crate::Result<()> {
-        self.write_byte(field_type_to_u8(identifier.element_type)).await?;
+        self.write_byte(field_type_to_u8(identifier.element_type))
+            .await?;
         self.write_i32(identifier.size).await
     }
 
@@ -418,7 +432,8 @@ impl<T> TAsyncOutputProtocol for TAsyncBinaryOutputProtocol<T>
     }
 
     async fn write_set_begin(&mut self, identifier: &TSetIdentifier) -> crate::Result<()> {
-        self.write_byte(field_type_to_u8(identifier.element_type)).await?;
+        self.write_byte(field_type_to_u8(identifier.element_type))
+            .await?;
         self.write_i32(identifier.size).await
     }
 
@@ -450,7 +465,7 @@ impl<T> TAsyncOutputProtocol for TAsyncBinaryOutputProtocol<T>
     //
 
     async fn write_byte(&mut self, b: u8) -> crate::Result<()> {
-        self.transport.write(&[b; 1]).await;
+        self.transport.write(&[b; 1]).await?;
 
         Ok(())
     }
@@ -496,6 +511,6 @@ fn field_type_from_u8(b: u8) -> crate::Result<TType> {
         unkn => Err(Error::Protocol(ProtocolError {
             kind: ProtocolErrorKind::InvalidData,
             message: format!("cannot convert {} to TType", unkn),
-        }))
+        })),
     }
 }

@@ -65,17 +65,6 @@ pub use ordered_float::OrderedFloat as OrderedFloat;
 pub use crate::autogen::*;
 pub use crate::errors::*;
 
-/// Assert that an expression returning a `Result` is a success. If it is,
-/// return the value contained in the result, i.e. `expr.unwrap()`.
-#[cfg(test)]
-macro_rules! assert_success {
-    ($e: expr) => {{
-        let res = $e;
-        assert!(res.is_ok());
-        res.unwrap()
-    }};
-}
-
 pub mod protocol;
 pub mod server;
 pub mod transport;

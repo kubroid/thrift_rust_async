@@ -1,28 +1,30 @@
 use std::sync::Arc;
 
 use async_std::{
-    net::{SocketAddr, TcpListener, TcpStream},
+    net::{TcpListener, TcpStream},
     prelude::*,
     task,
 };
-use socket2::{Domain, Socket, Type};
 
-use crate::{ApplicationError, ApplicationErrorKind};
 use crate::errors::TransportErrorKind;
-use crate::protocol::{TAsyncInputProtocol, TAsyncInputProtocolFactory, TAsyncOutputProtocol, TAsyncOutputProtocolFactory};
-use crate::transport::{TAsyncReadTransportFactory, TAsyncWriteTransportFactory};
+use crate::protocol::{
+    TAsyncInputProtocol, TAsyncInputProtocolFactory, TAsyncOutputProtocol,
+    TAsyncOutputProtocolFactory,
+};
 use crate::transport::async_socket::TAsyncTcpChannel;
 use crate::transport::TAsyncIoChannel;
+use crate::transport::{TAsyncReadTransportFactory, TAsyncWriteTransportFactory};
+use crate::{ApplicationError, ApplicationErrorKind};
 
 use super::TAsyncProcessor;
 
 pub struct TAsyncServer<PRC, RTF, IPF, WTF, OPF>
-    where
-        PRC: TAsyncProcessor + Send + Sync + 'static,
-        RTF: TAsyncReadTransportFactory + 'static,
-        IPF: TAsyncInputProtocolFactory + 'static,
-        WTF: TAsyncWriteTransportFactory + 'static,
-        OPF: TAsyncOutputProtocolFactory + 'static,
+where
+    PRC: TAsyncProcessor + Send + Sync + 'static,
+    RTF: TAsyncReadTransportFactory + 'static,
+    IPF: TAsyncInputProtocolFactory + 'static,
+    WTF: TAsyncWriteTransportFactory + 'static,
+    OPF: TAsyncOutputProtocolFactory + 'static,
 {
     r_trans_factory: RTF,
     i_proto_factory: IPF,
@@ -32,12 +34,12 @@ pub struct TAsyncServer<PRC, RTF, IPF, WTF, OPF>
 }
 
 impl<PRC, RTF, IPF, WTF, OPF> TAsyncServer<PRC, RTF, IPF, WTF, OPF>
-    where
-        PRC: TAsyncProcessor + Send + Sync + 'static,
-        RTF: TAsyncReadTransportFactory + 'static,
-        IPF: TAsyncInputProtocolFactory + 'static,
-        WTF: TAsyncWriteTransportFactory + 'static,
-        OPF: TAsyncOutputProtocolFactory + 'static,
+where
+    PRC: TAsyncProcessor + Send + Sync + 'static,
+    RTF: TAsyncReadTransportFactory + 'static,
+    IPF: TAsyncInputProtocolFactory + 'static,
+    WTF: TAsyncWriteTransportFactory + 'static,
+    OPF: TAsyncOutputProtocolFactory + 'static,
 {
     /// Create a `TServer`.
     ///
@@ -70,14 +72,8 @@ impl<PRC, RTF, IPF, WTF, OPF> TAsyncServer<PRC, RTF, IPF, WTF, OPF>
     /// Return `Err` when the server cannot bind to `listen_address` or there
     /// is an unrecoverable error.
     pub async fn listen(&mut self, listen_address: &str) -> crate::Result<()> {
-        let socket = Socket::new(Domain::ipv4(), Type::stream(), None).unwrap();
-        socket.bind(&listen_address.parse::<SocketAddr>().unwrap().into());
-        socket.listen(1024);
-
-        let listener = socket.into_tcp_listener();
-        let async_listener = TcpListener::from(listener);
-
-        let mut incoming = async_listener.incoming();
+        let listener = TcpListener::bind(listen_address).await?;
+        let mut incoming = listener.incoming();
 
         // let mut count = 0;
         while let Some(stream) = incoming.next().await {
@@ -88,7 +84,10 @@ impl<PRC, RTF, IPF, WTF, OPF> TAsyncServer<PRC, RTF, IPF, WTF, OPF>
 
             let (read_protocol, write_protocol) = self.new_protocols_for_connection(stream).await?;
             task::spawn(handle_incoming_connection_server(
-                self.async_processor.clone(), read_protocol, write_protocol));
+                self.async_processor.clone(),
+                read_protocol,
+                write_protocol,
+            ));
             // count += 1;
             // println!("{}", count);
         }
@@ -104,7 +103,10 @@ impl<PRC, RTF, IPF, WTF, OPF> TAsyncServer<PRC, RTF, IPF, WTF, OPF>
     async fn new_protocols_for_connection(
         &mut self,
         stream: TcpStream,
-    ) -> crate::Result<(Box<dyn TAsyncInputProtocol + Send>, Box<dyn TAsyncOutputProtocol + Send>)> {
+    ) -> crate::Result<(
+        Box<dyn TAsyncInputProtocol + Send>,
+        Box<dyn TAsyncOutputProtocol + Send>,
+    )> {
         // create the shared tcp stream
         let channel = TAsyncTcpChannel::with_stream(stream);
 
@@ -124,7 +126,6 @@ impl<PRC, RTF, IPF, WTF, OPF> TAsyncServer<PRC, RTF, IPF, WTF, OPF>
     }
 }
 
-
 /// handle one connection using processor
 async fn handle_incoming_connection_server<PRC>(
     processor: Arc<PRC>,
@@ -140,7 +141,8 @@ async fn handle_incoming_connection_server<PRC>(
             Ok(()) => {}
             Err(err) => {
                 match err {
-                    crate::Error::Transport(ref transport_err) if transport_err.kind == TransportErrorKind::EndOfFile => {}
+                    crate::Error::Transport(ref transport_err)
+                        if transport_err.kind == TransportErrorKind::EndOfFile => {}
                     other => warn!("processor completed with error: {:?}", other),
                 }
                 break;

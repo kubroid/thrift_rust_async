@@ -18,7 +18,6 @@
 use std::{error, fmt, io, string};
 use std::convert::{From, Into};
 use std::convert::TryFrom;
-use std::error::Error as StdError;
 use std::fmt::{Debug, Display, Formatter};
 
 use crate::protocol::{TAsyncInputProtocol, TAsyncOutputProtocol, TFieldIdentifier, TStructIdentifier, TType};
@@ -236,8 +235,8 @@ impl Error {
         i.read_struct_end().await?;
 
         Ok(ApplicationError {
-            kind: kind,
-            message: message,
+            kind,
+            message,
         })
     }
 
@@ -268,17 +267,6 @@ impl Error {
         o.write_struct_end().await?;
 
         o.flush().await
-    }
-}
-
-impl error::Error for Error {
-    fn description(&self) -> &str {
-        match *self {
-            Error::Transport(ref e) => TransportError::description(e),
-            Error::Protocol(ref e) => ProtocolError::description(e),
-            Error::Application(ref e) => ApplicationError::description(e),
-            Error::User(ref e) => e.description(),
-        }
     }
 }
 
@@ -362,7 +350,7 @@ impl TransportError {
     /// Create a new `TransportError`.
     pub fn new<S: Into<String>>(kind: TransportErrorKind, message: S) -> TransportError {
         TransportError {
-            kind: kind,
+            kind,
             message: message.into(),
         }
     }
@@ -435,24 +423,24 @@ impl From<io::Error> for Error {
             | io::ErrorKind::ConnectionRefused
             | io::ErrorKind::NotConnected => Error::Transport(TransportError {
                 kind: TransportErrorKind::NotOpen,
-                message: err.description().to_owned(),
+                message: err.to_string(),
             }),
             io::ErrorKind::AlreadyExists => Error::Transport(TransportError {
                 kind: TransportErrorKind::AlreadyOpen,
-                message: err.description().to_owned(),
+                message: err.to_string(),
             }),
             io::ErrorKind::TimedOut => Error::Transport(TransportError {
                 kind: TransportErrorKind::TimedOut,
-                message: err.description().to_owned(),
+                message: err.to_string(),
             }),
             io::ErrorKind::UnexpectedEof => Error::Transport(TransportError {
                 kind: TransportErrorKind::EndOfFile,
-                message: err.description().to_owned(),
+                message: err.to_string(),
             }),
             _ => {
                 Error::Transport(TransportError {
                     kind: TransportErrorKind::Unknown,
-                    message: err.description().to_owned(), // FIXME: use io error's debug string
+                    message: err.to_string(), // FIXME: use io error's debug string
                 })
             }
         }
@@ -463,7 +451,7 @@ impl From<string::FromUtf8Error> for Error {
     fn from(err: string::FromUtf8Error) -> Self {
         Error::Protocol(ProtocolError {
             kind: ProtocolErrorKind::InvalidData,
-            message: err.description().to_owned(), // FIXME: use fmt::Error's debug string
+            message: err.to_string(), // FIXME: use fmt::Error's debug string
         })
     }
 }
@@ -490,7 +478,7 @@ impl ProtocolError {
     /// Create a new `ProtocolError`.
     pub fn new<S: Into<String>>(kind: ProtocolErrorKind, message: S) -> ProtocolError {
         ProtocolError {
-            kind: kind,
+            kind,
             message: message.into(),
         }
     }
@@ -581,7 +569,7 @@ impl ApplicationError {
     /// Create a new `ApplicationError`.
     pub fn new<S: Into<String>>(kind: ApplicationErrorKind, message: S) -> ApplicationError {
         ApplicationError {
-            kind: kind,
+            kind,
             message: message.into(),
         }
     }
