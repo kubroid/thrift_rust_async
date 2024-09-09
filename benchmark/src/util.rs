@@ -1,40 +1,79 @@
 use std::borrow::Borrow;
 use std::env;
 
+use tabled::builder::Builder;
+
+#[derive(Debug)]
+pub struct TestResult {
+    pub mode: String,
+    pub call_num: i64,
+    pub tot_time: i64,
+    pub data: Vec<i64>,
+}
+
+impl TestResult {
+    pub fn as_vec(&self) -> Vec<String> {
+        let mut rec = Vec::<String>::new();
+        rec.push(self.mode.clone());
+        rec.push(format!("{}ms", self.tot_time));
+        rec.push(format!("{}", (1000 * self.call_num / self.tot_time)));
+        for t in &self.data {
+            rec.push(format!("{}us", t / 1000));
+        }
+
+        rec
+    }
+}
+
 /// print time result in md table
-pub fn format_result(mode: String, call_num: i64, total_time_in_ms: i64,
-                     avg_time: i64, per_50_time: i64, per_90_time: i64,
-                     per_95_time: i64, per_99_time: i64,
-                     per_999_time: i64, max_time: i64) -> String {
-    format!("###{}
+pub fn format_result(data: Vec<TestResult>) -> String {
+    let header = [
+        "mode",
+        "total time",
+        "query per second",
+        "avg time",
+        "per 50 time",
+        "per 90 time",
+        "per 95 time",
+        "per 99 time",
+        "per 99.9 time",
+        "max time",
+    ];
+
+    let mut table = Builder::default();
+    table.push_record(header);
+    for r in &data {
+        table.push_record(r.as_vec())
+    }
+
+    table.build().to_string()
+}
+
+pub fn format_result1(
+    mode: String,
+    call_num: i64,
+    total_time_in_ms: i64,
+    data: Vec<i64>,
+) -> String {
+    let data: Vec<i64> = data.iter().map(|header| header / 1000).collect();
+    format!("### {mode}
 |  total time |   query per second  |  avg time   |  per 50 time |  per 90 time |  per 95 time |  per 99 time | per 99.9 time | max time |
 |  ---------  |   ----------------  | ----------  | ------------ | ------------ | ------------ | ------------ | ----------- |  -------- |
 |    {} ms  |        {}        |    {} us   |    {} us   |     {} us    |    {} us    |   {} us   |   {}  us  |   {}  us  |"
-            , mode, total_time_in_ms, (1000 * call_num / total_time_in_ms), avg_time / 1000, per_50_time / 1000,
-            per_90_time / 1000, per_95_time / 1000, per_99_time / 1000, per_999_time / 1000, max_time / 1000)
-}
-
-/// print time result in csv
-pub fn format_result_csv(mode: String, client_num: i64, loop_num: i64, total_time_in_ms: i64,
-                         avg_time: i64, per_50_time: i64, per_90_time: i64,
-                         per_95_time: i64, per_99_time: i64,
-                         per_999_time: i64, max_time: i64) -> String {
-    let call_num = client_num * loop_num;
-
-    format!("### {}
-client_num,loop_num,call_num,total_time,qps,avg,per50,per90,per95,per_99,per_999,max
-{},{},{},{},{},{},{},{},{},{},{},{}"
-            , mode, client_num, loop_num, call_num, total_time_in_ms, (1000 * call_num / total_time_in_ms),
-            avg_time / 1000, per_50_time / 1000, per_90_time / 1000, per_95_time / 1000, per_99_time / 1000, per_999_time / 1000, max_time / 1000)
+            , total_time_in_ms, (1000 * call_num / total_time_in_ms), data[0], data[1], data[2], data[3], data[4], data[5], data[6])
 }
 
 /// print config result in md table
 pub fn format_config(thread_num: i32, loop_num: i32) -> String {
-    format!("###config
+    format!(
+        "###config
 |  thread num   | loop num  | total call |
 |  -----------  | --------  | ---------- |
 |      {}      |    {}    |    {}    |",
-            format_i32(thread_num), format_i32(loop_num), format_i32(thread_num * loop_num))
+        format_i32(thread_num),
+        format_i32(loop_num),
+        format_i32(thread_num * loop_num)
+    )
 }
 
 /// format i32 for human
@@ -71,17 +110,17 @@ pub fn print_welcome() {
 }
 
 /// print benchmark result
-pub fn print_result(output: &Vec<String>) {
-    println!();
+pub fn print_result(output: Vec<Option<TestResult>>) {
     println!();
     println!("---------------------------   Benchmark Finished! --------------------------");
-    for line in output {
-        println!();
-        println!("{}", line);
-    }
+    println!();
+
+    let o: Vec<TestResult> = output.into_iter().flatten().collect();
+
+    println!("{}", format_result(o));
 }
 
-pub fn handle_time(time_arrays: Vec<Box<Vec<i64>>>) -> Box<Vec<i64>> {
+pub fn handle_time(time_arrays: Vec<Box<Vec<i64>>>) -> Vec<i64> {
     let mut sum = 0;
     let mut count = 0;
     let mut times: Vec<i64> = Vec::new();
@@ -111,7 +150,7 @@ pub fn handle_time(time_arrays: Vec<Box<Vec<i64>>>) -> Box<Vec<i64>> {
     // max time
     res.push(times[times.len() - 1]);
 
-    return Box::new(res);
+    return res;
 }
 
 /// parse command line args

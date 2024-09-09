@@ -17,6 +17,7 @@ use thrift::transport::TTcpChannel;
 
 // async use
 use async_thrift::server;
+use util::TestResult;
 
 use crate::util::{handle_time, parse_args};
 
@@ -59,15 +60,12 @@ const DEFAULT_LOOP_NUM: &str = "10000";
 const DEFAULT_ADDR: &str = "127.0.0.1:9090";
 
 // run sync server and client
-fn run_sync_both(output: &mut Vec<String>, args: Arc<Vec<String>>) {
+fn run_sync_both(args: Arc<Vec<String>>) -> Option<TestResult> {
     println!("begin sync benchmark...");
 
-    if args[RUN_SERVER] == String::from("true") {
-        // print config
-        output[CONFIG_LOCATION] = util::format_config(
-            args[THREAD_NUM].parse::<i32>().unwrap(),
-            args[LOOP_NUM].parse::<i32>().unwrap(),
-        );
+    let mut ret = None;
+
+    if args[RUN_SERVER] == *"true" {
         // start server
         let addr = Clone::clone(&args[ADDR]);
 
@@ -75,15 +73,15 @@ fn run_sync_both(output: &mut Vec<String>, args: Arc<Vec<String>>) {
         // we need to wait the server to run
         thread::sleep(Duration::from_secs(2));
 
-        if args[RUN_CLIENT] != String::from("true") {
+        if args[RUN_CLIENT] != *"true" {
             println!("server is online");
-            server.join();
+            let _ = server.join();
 
-            return;
+            return ret;
         }
     }
 
-    if args[RUN_CLIENT] == String::from("true") {
+    if args[RUN_CLIENT] == *"true" {
         // time clock start here
         let start = time::Instant::now();
 
@@ -112,48 +110,41 @@ fn run_sync_both(output: &mut Vec<String>, args: Arc<Vec<String>>) {
 
         // handle raw time result to statistic
         let time_statistic = handle_time(res);
-        output[SYNC_LOCATION] = util::format_result(
-            String::from("sync"),
-            args[THREAD_NUM].parse::<i64>().unwrap() * args[LOOP_NUM].parse::<i64>().unwrap(),
-            (end - start).whole_milliseconds() as i64,
-            time_statistic[0],
-            time_statistic[1],
-            time_statistic[2],
-            time_statistic[3],
-            time_statistic[4],
-            time_statistic[5],
-            time_statistic[6],
-        );
+        ret = Some(TestResult {
+            mode: "sync".into(),
+            call_num: args[THREAD_NUM].parse::<i64>().unwrap()
+                * args[LOOP_NUM].parse::<i64>().unwrap(),
+            tot_time: (end - start).whole_milliseconds() as i64,
+            data: time_statistic,
+        });
     }
 
     println!("sync finished!");
+
+    ret
 }
 
 // run async server and client
-async fn run_async_both(output: &mut Vec<String>, args: Arc<Vec<String>>) {
+async fn run_async_both(args: Arc<Vec<String>>) -> Option<TestResult> {
     println!("begin async benchmark...");
-
-    // print config
-    output[CONFIG_LOCATION] = util::format_config(
-        args[THREAD_NUM].parse::<i32>().unwrap(),
-        args[LOOP_NUM].parse::<i32>().unwrap(),
-    );
 
     let mut server = None;
     let addr = &args[ADDR];
 
-    if args[RUN_SERVER] == String::from("true") {
+    let mut ret = None;
+
+    if args[RUN_SERVER] == *"true" {
         server = Some(async_std::task::spawn(
             async_thrift_test::server::run_server(Clone::clone(addr)),
         ));
-        if args[RUN_CLIENT] != String::from("true") {
+        if args[RUN_CLIENT] != *"true" {
             println!("server is online");
             server.unwrap().await;
 
-            return;
+            return ret;
         }
     }
-    if args[RUN_CLIENT] == String::from("true") {
+    if args[RUN_CLIENT] == *"true" {
         let loop_num = args[LOOP_NUM].parse::<i32>().unwrap();
         let coroutine_num = args[THREAD_NUM].parse::<i32>().unwrap();
 
@@ -186,69 +177,44 @@ async fn run_async_both(output: &mut Vec<String>, args: Arc<Vec<String>>) {
         // handle raw time result to statistic
         let time_statistic = handle_time(res);
 
-        if !PRINT_CSV {
-            output[ASYNC_LOCATION] = util::format_result(
-                String::from("async"),
-                args[THREAD_NUM].parse::<i64>().unwrap() * args[LOOP_NUM].parse::<i64>().unwrap(),
-                (end - start).whole_milliseconds() as i64,
-                time_statistic[0],
-                time_statistic[1],
-                time_statistic[2],
-                time_statistic[3],
-                time_statistic[4],
-                time_statistic[5],
-                time_statistic[6],
-            );
-        } else {
-            output[ASYNC_LOCATION] = util::format_result_csv(
-                String::from("async"),
-                args[THREAD_NUM].parse::<i64>().unwrap(),
-                args[LOOP_NUM].parse::<i64>().unwrap(),
-                (end - start).whole_milliseconds() as i64,
-                time_statistic[0],
-                time_statistic[1],
-                time_statistic[2],
-                time_statistic[3],
-                time_statistic[4],
-                time_statistic[5],
-                time_statistic[6],
-            );
-        }
+        ret = Some(TestResult {
+            mode: "async".into(),
+            call_num: (coroutine_num * loop_num) as i64,
+            tot_time: (end - start).whole_milliseconds() as i64,
+            data: time_statistic,
+        })
     }
 
-    if args[RUN_SERVER] == String::from("true") {
+    if args[RUN_SERVER] == *"true" {
         server.unwrap().cancel().await;
     }
 
     println!("async finished!");
+
+    ret
 }
 
 // run async server and client
-async fn run_async_tokio_both(output: &mut Vec<String>, args: Arc<Vec<String>>) {
+async fn run_async_tokio_both(args: Arc<Vec<String>>) -> Option<TestResult> {
     println!("begin async tokio benchmark...");
-
-    // print config
-    output[CONFIG_LOCATION] = util::format_config(
-        args[THREAD_NUM].parse::<i32>().unwrap(),
-        args[LOOP_NUM].parse::<i32>().unwrap(),
-    );
 
     let mut server = None;
     let addr = &args[ADDR];
+    let mut ret = None;
 
-    if args[RUN_SERVER] == String::from("true") {
+    if args[RUN_SERVER] == *"true" {
         server = Some(tokio::task::spawn(
             async_thrift_test_tokio::server::run_server(Clone::clone(addr)),
         ));
-        if args[RUN_CLIENT] != String::from("true") {
+        if args[RUN_CLIENT] != *"true" {
             println!("server is online");
-            server.unwrap().await;
+            let _ = server.unwrap().await;
 
-            return;
+            return ret;
         }
     }
 
-    if args[RUN_CLIENT] == String::from("true") {
+    if args[RUN_CLIENT] == *"true" {
         // time
         let mut list = Vec::new();
 
@@ -278,41 +244,21 @@ async fn run_async_tokio_both(output: &mut Vec<String>, args: Arc<Vec<String>>) 
         // handle raw time result to statistic
         let time_statistic = handle_time(res);
 
-        if !PRINT_CSV {
-            output[ASYNC_TOKIO_LOCATION] = util::format_result(
-                String::from("async tokio"),
-                args[THREAD_NUM].parse::<i64>().unwrap() * args[LOOP_NUM].parse::<i64>().unwrap(),
-                (end - start).whole_milliseconds() as i64,
-                time_statistic[0],
-                time_statistic[1],
-                time_statistic[2],
-                time_statistic[3],
-                time_statistic[4],
-                time_statistic[5],
-                time_statistic[6],
-            );
-        } else {
-            output[ASYNC_TOKIO_LOCATION] = util::format_result_csv(
-                String::from("async tokio"),
-                args[THREAD_NUM].parse::<i64>().unwrap(),
-                args[LOOP_NUM].parse::<i64>().unwrap(),
-                (end - start).whole_milliseconds() as i64,
-                time_statistic[0],
-                time_statistic[1],
-                time_statistic[2],
-                time_statistic[3],
-                time_statistic[4],
-                time_statistic[5],
-                time_statistic[6],
-            );
-        }
+        ret = Some(TestResult {
+            mode: "async tokio".into(),
+            call_num: (coroutine_num * loop_num) as i64,
+            tot_time: (end - start).whole_milliseconds() as i64,
+            data: time_statistic,
+        })
     }
 
-    if args[RUN_SERVER] == String::from("true") {
-        server.unwrap().remote_handle();
+    if args[RUN_SERVER] == *"true" {
+        let _ = server.unwrap().await;
     }
 
     println!("async tokio finished!");
+
+    ret
 }
 
 fn main() {
@@ -331,28 +277,37 @@ fn main() {
 
     println!("{:?}", &args);
 
-    let mut output = vec![String::new(), String::new(), String::new(), String::new()];
+    let mut output = Vec::<Option<TestResult>>::new();
 
     util::print_welcome();
 
+    println!(
+        "{}",
+        util::format_config(
+            args[THREAD_NUM].parse::<i32>().unwrap(),
+            args[LOOP_NUM].parse::<i32>().unwrap(),
+        )
+    );
+
     let arc_args = Arc::new(args);
     // async part
-    if arc_args[RUN_ASYNC] == String::from("true") {
-        task::block_on(run_async_both(&mut output, Arc::clone(&arc_args)));
+    if arc_args[RUN_ASYNC] == *"true" {
+        output.push(task::block_on(run_async_both(Arc::clone(&arc_args))));
     }
 
     // async tokio part
-    if arc_args[RUN_ASYNC_TOKIO] == String::from("true") {
+    if arc_args[RUN_ASYNC_TOKIO] == *"true" {
         let rt = tokio::runtime::Builder::new_multi_thread()
             .enable_all()
             .build()
             .unwrap();
-        rt.block_on(run_async_tokio_both(&mut output, Arc::clone(&arc_args)));
+        output.push(rt.block_on(run_async_tokio_both(Arc::clone(&arc_args))));
+        rt.shutdown_background();
     }
 
     // sync part
-    if arc_args[RUN_SYNC] == String::from("true") {
-        run_sync_both(&mut output, Arc::clone(&arc_args));
+    if arc_args[RUN_SYNC] == *"true" {
+        output.push(run_sync_both(Arc::clone(&arc_args)));
     }
-    util::print_result(&output);
+    util::print_result(output);
 }
