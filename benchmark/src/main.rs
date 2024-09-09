@@ -3,20 +3,14 @@
 //#[global_allocator]
 //static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
 
-use std::cell::RefCell;
-use std::fs::File;
 use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
 
-use async_std::channel;
-use async_std::io::Error;
 use async_std::task;
 use futures::future::*;
-use thrift::transport::TTcpChannel;
 
 // async use
-use async_thrift::server;
 use util::TestResult;
 
 use crate::util::{handle_time, parse_args};
@@ -31,12 +25,6 @@ mod sync_thrift_test;
 mod util;
 
 // const
-const CONFIG_LOCATION: usize = 0;
-const SYNC_LOCATION: usize = 1;
-const ASYNC_LOCATION: usize = 2;
-const ASYNC_TOKIO_LOCATION: usize = 3;
-
-// const
 const RUN_CLIENT: usize = 0;
 const RUN_SERVER: usize = 1;
 const RUN_SYNC: usize = 2;
@@ -45,9 +33,6 @@ const RUN_ASYNC_TOKIO: usize = 4;
 const THREAD_NUM: usize = 5;
 const LOOP_NUM: usize = 6;
 const ADDR: usize = 7;
-
-// print format
-const PRINT_CSV: bool = false;
 
 ///
 const DEFAULT_RUN_CLIENT: &str = "true";
@@ -198,17 +183,16 @@ async fn run_async_both(args: Arc<Vec<String>>) -> Option<TestResult> {
 async fn run_async_tokio_both(args: Arc<Vec<String>>) -> Option<TestResult> {
     println!("begin async tokio benchmark...");
 
-    let mut server = None;
     let addr = &args[ADDR];
     let mut ret = None;
 
     if args[RUN_SERVER] == *"true" {
-        server = Some(tokio::task::spawn(
-            async_thrift_test_tokio::server::run_server(Clone::clone(addr)),
-        ));
+        let server = tokio::task::spawn(async_thrift_test_tokio::server::run_server(Clone::clone(
+            addr,
+        )));
         if args[RUN_CLIENT] != *"true" {
             println!("server is online");
-            let _ = server.unwrap().await;
+            let _ = server.await;
 
             return ret;
         }
@@ -250,10 +234,6 @@ async fn run_async_tokio_both(args: Arc<Vec<String>>) -> Option<TestResult> {
             tot_time: (end - start).whole_milliseconds() as i64,
             data: time_statistic,
         })
-    }
-
-    if args[RUN_SERVER] == *"true" {
-        let _ = server.unwrap().await;
     }
 
     println!("async tokio finished!");

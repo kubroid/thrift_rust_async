@@ -1,4 +1,3 @@
-use async_std::{io, net::ToSocketAddrs, task};
 use async_trait::async_trait;
 
 use async_thrift::protocol::async_binary::{
@@ -6,14 +5,11 @@ use async_thrift::protocol::async_binary::{
 };
 use async_thrift::server;
 use async_thrift::transport::async_buffered::{
-    TAsyncBufferedReadTransportFactory, TAsyncBufferedWriteTransport,
+    TAsyncBufferedReadTransportFactory,
     TAsyncBufferedWriteTransportFactory,
 };
-use async_thrift::transport::async_framed::{
-    TAsyncFramedReadTransportFactory, TAsyncFramedWriteTransportFactory,
-};
 
-use crate::async_thrift_test::echo::{LongMessageTestSyncHandler, LongMessageTestSyncProcessor};
+
 use crate::async_thrift_test::tutorial::{CalculatorSyncHandler, CalculatorSyncProcessor};
 
 pub async fn run_server(addr: String) {

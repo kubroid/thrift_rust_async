@@ -19,7 +19,7 @@ use crate::sync_thrift_test::tutorial::{CalculatorSyncClient, TCalculatorSyncCli
 use self::thrift::protocol::{TBinaryInputProtocol, TBinaryOutputProtocol};
 use self::thrift::transport::{TBufferedReadTransport, TBufferedReadTransportFactory, TBufferedWriteTransport};
 
-pub fn run(stream: TcpStream, loop_num: i32) -> thrift::Result<(Box<Vec<i64>>)> {
+pub fn run(stream: TcpStream, loop_num: i32) -> thrift::Result<Vec<i64>> {
     //
     // build client
     //
@@ -54,5 +54,5 @@ pub fn run(stream: TcpStream, loop_num: i32) -> thrift::Result<(Box<Vec<i64>>)> 
 
     // done!
     // println!("finish client");
-    Ok((Box::new(time_array)))
+    Ok(time_array)
 }

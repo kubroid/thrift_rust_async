@@ -199,12 +199,8 @@ impl CalculatorPingArgs {
             if field_ident.field_type == TType::Stop {
                 break;
             }
-            let field_id = field_id(&field_ident)?;
-            match field_id {
-                _ => {
-                    i_prot.skip(field_ident.field_type).await?;
-                }
-            };
+            let _ = field_id(&field_ident)?;
+            i_prot.skip(field_ident.field_type).await?;
             i_prot.read_field_end().await?;
         }
         i_prot.read_struct_end().await?;
@@ -234,12 +230,8 @@ impl CalculatorPingResult {
             if field_ident.field_type == TType::Stop {
                 break;
             }
-            let field_id = field_id(&field_ident)?;
-            match field_id {
-                _ => {
-                    i_prot.skip(field_ident.field_type).await?;
-                }
-            };
+            let _ = field_id(&field_ident)?;
+            i_prot.skip(field_ident.field_type).await?;
             i_prot.read_field_end().await?;
         }
         i_prot.read_struct_end().await?;

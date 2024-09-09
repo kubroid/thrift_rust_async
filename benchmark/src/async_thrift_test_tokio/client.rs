@@ -1,31 +1,21 @@
 // only for test!!!
 //
 
-use std::io::Error;
-use std::time::{SystemTime, UNIX_EPOCH};
-
-use time::Duration;
 use tokio::net::TcpStream;
-use tokio::task;
 
 use async_thrift_tokio::protocol::async_binary::{
     TAsyncBinaryInputProtocol, TAsyncBinaryOutputProtocol,
 };
-use async_thrift_tokio::protocol::{TAsyncInputProtocol, TAsyncOutputProtocol};
-use async_thrift_tokio::protocol::{TFieldIdentifier, TType};
 use async_thrift_tokio::transport::async_buffered::{
     TAsyncBufferedReadTransport, TAsyncBufferedWriteTransport,
 };
-use async_thrift_tokio::transport::async_framed::{
-    TAsyncFramedReadTransport, TAsyncFramedWriteTransport,
-};
+
 use async_thrift_tokio::transport::async_socket::TAsyncTcpChannel;
-use async_thrift_tokio::transport::{AsyncReadHalf, AsyncWrite, AsyncWriteHalf, TAsyncIoChannel};
+use async_thrift_tokio::transport::TAsyncIoChannel;
 
 use crate::async_thrift_test_tokio::tutorial::{CalculatorSyncClient, TCalculatorSyncClient};
-pub type Result<T> = std::result::Result<T, Error>;
 
-pub async fn run_client(addr: String, loop_num: i32) -> async_thrift_tokio::Result<Box<Vec<i64>>> {
+pub async fn run_client(addr: String, loop_num: i32) -> async_thrift_tokio::Result<Vec<i64>> {
     // time
     // let start = time::now();
     let stream: TcpStream = TcpStream::connect(addr.as_str()).await?;
@@ -50,5 +40,5 @@ pub async fn run_client(addr: String, loop_num: i32) -> async_thrift_tokio::Resu
 
     c.close();
 
-    Ok(Box::new(time_array))
+    Ok(time_array)
 }
