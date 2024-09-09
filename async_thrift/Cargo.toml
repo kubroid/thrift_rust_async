@@ -21,4 +21,4 @@ futures = "0.3.5"
 async-std = { version = "1.6.3", features = ["tokio02"] }
 async-trait = "0.1.40"
 try_from = "0.2.0"
-socket2 = ""
+socket2 = "0.2.0"

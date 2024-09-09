@@ -2,7 +2,6 @@ use std::sync::Arc;
 
 use tokio::{
     net::{TcpListener, TcpStream, ToSocketAddrs},
-    prelude::*,
     task,
 };
 use tokio::stream::StreamExt;
@@ -78,7 +77,7 @@ impl<PRC, RTF, IPF, WTF, OPF> TAsyncServer<PRC, RTF, IPF, WTF, OPF>
                     task::spawn(handle_incoming_connection_server(
                         self.async_processor.clone(), read_protocol, write_protocol));
                 }
-                Err(e) => { /* connection failed */ }
+                Err(_) => { /* connection failed */ }
             }
         }
 

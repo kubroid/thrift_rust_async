@@ -86,21 +86,24 @@ pub trait TAsyncInputProtocol: Send {
                     if field_ident.field_type == TType::Stop {
                         break;
                     }
-                    self.skip_till_depth(field_ident.field_type, depth - 1).await?;
+                    self.skip_till_depth(field_ident.field_type, depth - 1)
+                        .await?;
                 }
                 self.read_struct_end().await
             }
             TType::List => {
                 let list_ident = self.read_list_begin().await?;
                 for _ in 0..list_ident.size {
-                    self.skip_till_depth(list_ident.element_type, depth - 1).await?;
+                    self.skip_till_depth(list_ident.element_type, depth - 1)
+                        .await?;
                 }
                 self.read_list_end().await
             }
             TType::Set => {
                 let set_ident = self.read_set_begin().await?;
                 for _ in 0..set_ident.size {
-                    self.skip_till_depth(set_ident.element_type, depth - 1).await?;
+                    self.skip_till_depth(set_ident.element_type, depth - 1)
+                        .await?;
                 }
                 self.read_set_end().await
             }
@@ -193,8 +196,8 @@ pub trait TAsyncOutputProtocol: Send {
 
 #[async_trait]
 impl<P> TAsyncInputProtocol for Box<P>
-    where
-        P: TAsyncInputProtocol + ?Sized + Send,
+where
+    P: TAsyncInputProtocol + ?Sized + Send,
 {
     async fn read_message_begin(&mut self) -> crate::Result<TMessageIdentifier> {
         (**self).read_message_begin().await
@@ -283,8 +286,8 @@ impl<P> TAsyncInputProtocol for Box<P>
 
 #[async_trait]
 impl<P> TAsyncOutputProtocol for Box<P>
-    where
-        P: TAsyncOutputProtocol + ?Sized + Send,
+where
+    P: TAsyncOutputProtocol + ?Sized + Send,
 {
     async fn write_message_begin(&mut self, identifier: &TMessageIdentifier) -> crate::Result<()> {
         (**self).write_message_begin(identifier).await
@@ -381,28 +384,40 @@ impl<P> TAsyncOutputProtocol for Box<P>
 
 pub trait TAsyncInputProtocolFactory {
     // Create a `TAsyncInputProtocol` that reads bytes from `transport`.
-    fn create(&self, transport: Box<dyn TAsyncReadTransport + Send>) -> Box<dyn TAsyncInputProtocol + Send>;
+    fn create(
+        &self,
+        transport: Box<dyn TAsyncReadTransport + Send>,
+    ) -> Box<dyn TAsyncInputProtocol + Send>;
 }
 
 impl<T> TAsyncInputProtocolFactory for Box<T>
-    where
-        T: TAsyncInputProtocolFactory + ?Sized,
+where
+    T: TAsyncInputProtocolFactory + ?Sized,
 {
-    fn create(&self, transport: Box<dyn TAsyncReadTransport + Send>) -> Box<dyn TAsyncInputProtocol + Send> {
+    fn create(
+        &self,
+        transport: Box<dyn TAsyncReadTransport + Send>,
+    ) -> Box<dyn TAsyncInputProtocol + Send> {
         (**self).create(transport)
     }
 }
 
 pub trait TAsyncOutputProtocolFactory {
     /// Create a `TOutputProtocol` that writes bytes to `transport`.
-    fn create(&self, transport: Box<dyn TAsyncWriteTransport + Send>) -> Box<dyn TAsyncOutputProtocol + Send>;
+    fn create(
+        &self,
+        transport: Box<dyn TAsyncWriteTransport + Send>,
+    ) -> Box<dyn TAsyncOutputProtocol + Send>;
 }
 
 impl<T> TAsyncOutputProtocolFactory for Box<T>
-    where
-        T: TAsyncOutputProtocolFactory + ?Sized,
+where
+    T: TAsyncOutputProtocolFactory + ?Sized,
 {
-    fn create(&self, transport: Box<dyn TAsyncWriteTransport + Send>) -> Box<dyn TAsyncOutputProtocol + Send> {
+    fn create(
+        &self,
+        transport: Box<dyn TAsyncWriteTransport + Send>,
+    ) -> Box<dyn TAsyncOutputProtocol + Send> {
         (**self).create(transport)
     }
 }
@@ -428,8 +443,8 @@ impl TMessageIdentifier {
     ) -> TMessageIdentifier {
         TMessageIdentifier {
             name: name.into(),
-            message_type: message_type,
-            sequence_number: sequence_number,
+            message_type,
+            sequence_number,
         }
     }
 }
@@ -471,14 +486,14 @@ impl TFieldIdentifier {
     ///
     /// `id` should be `None` if `field_type` is `TType::Stop`.
     pub fn new<N, S, I>(name: N, field_type: TType, id: I) -> TFieldIdentifier
-        where
-            N: Into<Option<S>>,
-            S: Into<String>,
-            I: Into<Option<i16>>,
+    where
+        N: Into<Option<S>>,
+        S: Into<String>,
+        I: Into<Option<i16>>,
     {
         TFieldIdentifier {
             name: name.into().map(|n| n.into()),
-            field_type: field_type,
+            field_type,
             id: id.into(),
         }
     }
@@ -498,8 +513,8 @@ impl TListIdentifier {
     /// `element_type`.
     pub fn new(element_type: TType, size: i32) -> TListIdentifier {
         TListIdentifier {
-            element_type: element_type,
-            size: size,
+            element_type,
+            size,
         }
     }
 }
@@ -518,8 +533,8 @@ impl TSetIdentifier {
     /// `element_type`.
     pub fn new(element_type: TType, size: i32) -> TSetIdentifier {
         TSetIdentifier {
-            element_type: element_type,
-            size: size,
+            element_type,
+            size,
         }
     }
 }
@@ -539,14 +554,14 @@ impl TMapIdentifier {
     /// Create a `TMapIdentifier` for a map with `size` entries of type
     /// `key_type -> value_type`.
     pub fn new<K, V>(key_type: K, value_type: V, size: i32) -> TMapIdentifier
-        where
-            K: Into<Option<TType>>,
-            V: Into<Option<TType>>,
+    where
+        K: Into<Option<TType>>,
+        V: Into<Option<TType>>,
     {
         TMapIdentifier {
             key_type: key_type.into(),
             value_type: value_type.into(),
-            size: size,
+            size,
         }
     }
 }
@@ -673,7 +688,10 @@ pub fn verify_expected_service_call(expected: &str, actual: &str) -> crate::Resu
 /// `actual`.
 ///
 /// Return `()` if `actual == expected`, `Err` otherwise.
-pub fn verify_expected_message_type(expected: TMessageType, actual: TMessageType) -> crate::Result<()> {
+pub fn verify_expected_message_type(
+    expected: TMessageType,
+    actual: TMessageType,
+) -> crate::Result<()> {
     if expected == actual {
         Ok(())
     } else {

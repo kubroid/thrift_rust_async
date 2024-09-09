@@ -80,15 +80,15 @@ impl<C> AsyncRead for TAsyncFramedReadTransport<C>
     async fn read(&mut self, b: &mut [u8]) -> io::Result<usize> {
         if self.cap - self.pos == 0 {
             let mut buf = [0; 4];
-            self.chan.read(&mut buf).await;
+            self.chan.read(&mut buf).await?;
             let mut rdr = Cursor::new(buf);
             let message_size = rdr.read_i32::<BigEndian>().unwrap() as usize;
 
             let buf_capacity = cmp::max(message_size, READ_CAPACITY);
             self.buf.resize(buf_capacity, 0);
 
-            self.chan.read(&mut self.buf[..message_size]).await;
-            self.cap = message_size as usize;
+            self.chan.read(&mut self.buf[..message_size]).await?;
+            self.cap = message_size;
             self.pos = 0;
         }
 
@@ -179,7 +179,7 @@ impl<C> AsyncWrite for TAsyncFramedWriteTransport<C>
             let mut wtr = Vec::new();
             wtr.write_i32::<BigEndian>(message_size as i32).unwrap();
 
-            self.channel.write(&wtr).await;
+            self.channel.write(&wtr).await?;
         }
 
         // will spin if the underlying channel can't be written to

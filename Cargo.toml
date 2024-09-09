@@ -1,7 +1,7 @@
 [workspace]
 
 members = [
-    "async_thrift",
-    "benchmark",
+#    "async_thrift",
+#    "benchmark",
     "async_thrift_tokio"
 ]
