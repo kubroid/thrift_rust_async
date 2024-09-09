@@ -45,7 +45,7 @@ pub async fn run_client(addr: String, loop_num: i32) -> async_thrift_tokio::Resu
         let before = time::Instant::now();
         client.ping().await?;
         let end = time::Instant::now();
-        time_array.push((end - before).num_nanoseconds().unwrap());
+        time_array.push((end - before).whole_nanoseconds() as i64);
     }
 
     c.close();
