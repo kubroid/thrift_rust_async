@@ -343,7 +343,11 @@ fn main() {
 
     // async tokio part
     if arc_args[RUN_ASYNC_TOKIO] == String::from("true") {
-        task::block_on(run_async_tokio_both(&mut output, Arc::clone(&arc_args)));
+        let rt = tokio::runtime::Builder::new_multi_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+        rt.block_on(run_async_tokio_both(&mut output, Arc::clone(&arc_args)));
     }
 
     // sync part
