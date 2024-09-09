@@ -8,24 +8,27 @@ use async_std::{
     net::{TcpListener, TcpStream, ToSocketAddrs},
     task,
 };
-use async_std::sync::Receiver;
+//use async_std::sync::Receiver;
 use thrift::transport::TTcpChannel;
 use time::Duration;
 
-use async_thrift::protocol::{TFieldIdentifier, TType};
+use crate::async_thrift_test::echo::{LongMessageTestSyncClient, TLongMessageTestSyncClient};
+use crate::async_thrift_test::tutorial::{CalculatorSyncClient, TCalculatorSyncClient};
 use async_thrift::protocol::async_binary::{TAsyncBinaryInputProtocol, TAsyncBinaryOutputProtocol};
 use async_thrift::protocol::TAsyncOutputProtocol;
-use async_thrift::transport::{AsyncReadHalf, AsyncWrite, AsyncWriteHalf, TAsyncIoChannel};
-use async_thrift::transport::async_buffered::{TAsyncBufferedReadTransport, TAsyncBufferedWriteTransport};
-use async_thrift::transport::async_framed::{TAsyncFramedReadTransport, TAsyncFramedWriteTransport};
+use async_thrift::protocol::{TFieldIdentifier, TType};
+use async_thrift::transport::async_buffered::{
+    TAsyncBufferedReadTransport, TAsyncBufferedWriteTransport,
+};
+use async_thrift::transport::async_framed::{
+    TAsyncFramedReadTransport, TAsyncFramedWriteTransport,
+};
 use async_thrift::transport::async_socket::TAsyncTcpChannel;
-use crate::async_thrift_test::echo::{LongMessageTestSyncClient,TLongMessageTestSyncClient};
-use crate::async_thrift_test::tutorial::{CalculatorSyncClient, TCalculatorSyncClient};
+use async_thrift::transport::{AsyncReadHalf, AsyncWrite, AsyncWriteHalf, TAsyncIoChannel};
 
 pub type Result<T> = std::result::Result<T, Error>;
 
-
-pub async fn run_client(addr: String, loop_num: i32, receiver: Receiver<Vec<i8>>) -> async_thrift::Result<(Box<Vec<i64>>)> {
+pub async fn run_client(addr: String, loop_num: i32) -> async_thrift::Result<(Box<Vec<i64>>)> {
     // time
     // let start = time::now();
 
@@ -35,27 +38,18 @@ pub async fn run_client(addr: String, loop_num: i32, receiver: Receiver<Vec<i8>>
 
     let (i_chan, o_chan) = c.split().unwrap();
 
-    let i_prot = TAsyncBinaryInputProtocol::new(
-        TAsyncBufferedReadTransport::new(i_chan), true,
-    );
-    let o_prot = TAsyncBinaryOutputProtocol::new(
-        TAsyncBufferedWriteTransport::new(o_chan), true,
-    );
+    let i_prot = TAsyncBinaryInputProtocol::new(TAsyncBufferedReadTransport::new(i_chan), true);
+    let o_prot = TAsyncBinaryOutputProtocol::new(TAsyncBufferedWriteTransport::new(o_chan), true);
 
     let mut client = CalculatorSyncClient::new(i_prot, o_prot);
 
     let mut time_array = Vec::with_capacity(loop_num as usize);
 
-    loop {
-        let vec = receiver.recv().await.unwrap();
-        if vec.len() >= 1 {
-            let before = time::Instant::now();
-            client.ping().await?;
-            let end = time::Instant::now();
-            time_array.push((end - before).num_nanoseconds().unwrap());
-        } else {
-            break;
-        }
+    for _ in 0..loop_num {
+        let before = time::Instant::now();
+        client.ping().await?;
+        let end = time::Instant::now();
+        time_array.push((end - before).num_nanoseconds().unwrap());
     }
 
     c.close();

@@ -3,7 +3,7 @@
 
 #![allow(unused_imports)]
 #![allow(unused_extern_crates)]
-#![cfg_attr(feature = "cargo-clippy", allow(too_many_arguments, type_complexity))]
+#![cfg_attr(feature = "clippy", allow(too_many_arguments, type_complexity))]
 #![cfg_attr(rustfmt, rustfmt_skip)]
 
 extern crate async_thrift;
@@ -146,7 +146,7 @@ impl TCalculatorProcessFunctions {
                         let ret_err = {
                             ApplicationError::new(
                                 ApplicationErrorKind::Unknown,
-                                e.description(),
+                                e.to_string(),
                             )
                         };
                         let message_ident = TMessageIdentifier::new("ping", TMessageType::Exception, incoming_sequence_number);
