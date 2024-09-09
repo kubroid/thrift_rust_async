@@ -3,10 +3,8 @@ use std::io::ErrorKind;
 
 use async_trait::async_trait;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use tokio::net::{
-    tcp::{OwnedReadHalf, OwnedWriteHalf},
-    TcpStream,
-};
+use tokio::net::tcp::{OwnedReadHalf, OwnedWriteHalf};
+use tokio::net::TcpStream;
 
 use crate::transport::{AsyncRead, AsyncReadHalf, AsyncWrite, AsyncWriteHalf, TAsyncIoChannel};
 

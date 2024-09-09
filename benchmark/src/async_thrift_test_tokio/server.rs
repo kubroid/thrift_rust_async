@@ -1,6 +1,3 @@
-use std::io::Error;
-
-use async_std::{net::ToSocketAddrs, task};
 use async_trait::async_trait;
 
 use async_thrift::protocol::async_binary::{
@@ -8,11 +5,8 @@ use async_thrift::protocol::async_binary::{
 };
 use async_thrift::server;
 use async_thrift::transport::async_buffered::{
-    TAsyncBufferedReadTransportFactory, TAsyncBufferedWriteTransport,
+    TAsyncBufferedReadTransportFactory,
     TAsyncBufferedWriteTransportFactory,
-};
-use async_thrift::transport::async_framed::{
-    TAsyncFramedReadTransportFactory, TAsyncFramedWriteTransportFactory,
 };
 
 use crate::async_thrift_test::tutorial::{CalculatorSyncHandler, CalculatorSyncProcessor};

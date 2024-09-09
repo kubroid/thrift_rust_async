@@ -5,10 +5,8 @@ use std::io::Error;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use time::Duration;
-use tokio::{
-    net::{TcpStream, ToSocketAddrs},
-    task,
-};
+use tokio::net::TcpStream;
+use tokio::task;
 
 use async_thrift_tokio::protocol::async_binary::{
     TAsyncBinaryInputProtocol, TAsyncBinaryOutputProtocol,
@@ -30,7 +28,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 pub async fn run_client(addr: String, loop_num: i32) -> async_thrift_tokio::Result<Box<Vec<i64>>> {
     // time
     // let start = time::now();
-    let stream = TcpStream::connect(addr.as_str()).await?;
+    let stream: TcpStream = TcpStream::connect(addr.as_str()).await?;
 
     let mut c = TAsyncTcpChannel::with_stream(stream);
 
