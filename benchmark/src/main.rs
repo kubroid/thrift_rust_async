@@ -34,7 +34,6 @@ const THREAD_NUM: usize = 5;
 const LOOP_NUM: usize = 6;
 const ADDR: usize = 7;
 
-///
 const DEFAULT_RUN_CLIENT: &str = "true";
 const DEFAULT_RUN_SERVER: &str = "true";
 const DEFAULT_RUN_SYNC: &str = "false";
