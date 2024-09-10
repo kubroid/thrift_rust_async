@@ -1,15 +1,14 @@
 use async_trait::async_trait;
 
-use async_thrift::protocol::async_binary::{
+use async_thrift_tokio::protocol::async_binary::{
     TAsyncBinaryInputProtocolFactory, TAsyncBinaryOutputProtocolFactory,
 };
-use async_thrift::server;
-use async_thrift::transport::async_buffered::{
+use async_thrift_tokio::server;
+use async_thrift_tokio::transport::async_buffered::{
     TAsyncBufferedReadTransportFactory, TAsyncBufferedWriteTransportFactory,
 };
-//use tokio::time::{sleep, Duration};
 
-use crate::async_thrift_test::tutorial::{CalculatorSyncHandler, CalculatorSyncProcessor};
+use crate::async_thrift_test_tokio::tutorial::{CalculatorSyncHandler, CalculatorSyncProcessor};
 
 pub async fn run_server(addr: String) {
     let processor = CalculatorSyncProcessor::new(PartHandler {});
@@ -32,8 +31,9 @@ struct PartHandler {}
 
 #[async_trait]
 impl CalculatorSyncHandler for PartHandler {
-    async fn handle_ping(&self) -> async_thrift::Result<()> {
-        async_std::task::sleep(std::time::Duration::from_millis(10)).await;
+    async fn handle_ping(&self) -> async_thrift_tokio::Result<()> {
+        tokio::time::sleep(tokio::time::Duration::from_millis(10)).await;
+        //async_std::task::sleep(std::time::Duration::from_millis(10)).await;
         Ok(())
     }
 }
