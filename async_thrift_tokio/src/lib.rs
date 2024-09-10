@@ -53,14 +53,10 @@ extern crate byteorder;
 extern crate integer_encoding;
 #[macro_use]
 extern crate log;
-extern crate ordered_float;
 extern crate threadpool;
 
 // NOTE: this macro has to be defined before any modules. See:
 // https://danielkeep.github.io/quick-intro-to-macros.html#some-more-gotchas
-
-// Re-export ordered-float, since it is used by the generator
-pub use ordered_float::OrderedFloat;
 
 pub use crate::autogen::*;
 pub use crate::errors::*;

@@ -51,15 +51,14 @@ pub fn format_result(data: Vec<TestResult>) -> String {
 
 /// print config result in md table
 pub fn format_config(thread_num: i32, loop_num: i32) -> String {
-    format!(
-        "###config
-|  thread num   | loop num  | total call |
-|  -----------  | --------  | ---------- |
-|      {}      |    {}    |    {}    |",
+    let mut table = Builder::default();
+    table.push_record(["thread num", "loop num", "total call"]);
+    table.push_record([
         format_i32(thread_num),
         format_i32(loop_num),
-        format_i32(thread_num * loop_num)
-    )
+        format_i32(thread_num * loop_num),
+    ]);
+    table.build().to_string()
 }
 
 /// format i32 for human

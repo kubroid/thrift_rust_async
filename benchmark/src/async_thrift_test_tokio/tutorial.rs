@@ -20,7 +20,6 @@ use std::rc::Rc;
 use async_trait::async_trait;
 
 use async_thrift_tokio::{ApplicationError, ApplicationErrorKind, ProtocolError, ProtocolErrorKind, TThriftClient};
-use async_thrift_tokio::OrderedFloat;
 use async_thrift_tokio::protocol::{TAsyncInputProtocol, TAsyncOutputProtocol, TFieldIdentifier, TListIdentifier, TMapIdentifier, TMessageIdentifier, TMessageType, TSetIdentifier, TStructIdentifier, TType};
 use async_thrift_tokio::protocol::field_id;
 use async_thrift_tokio::protocol::verify_expected_message_type;

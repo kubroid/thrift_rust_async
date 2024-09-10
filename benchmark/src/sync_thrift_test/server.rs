@@ -1,3 +1,6 @@
+use std::thread::sleep;
+use std::time::Duration;
+
 use thrift::protocol::{
     TBinaryInputProtocolFactory, TBinaryOutputProtocolFactory, TCompactInputProtocolFactory,
     TCompactOutputProtocolFactory, TInputProtocolFactory, TOutputProtocolFactory,
@@ -48,6 +51,8 @@ struct PartHandler;
 
 impl CalculatorSyncHandler for PartHandler {
     fn handle_ping(&self) -> thrift::Result<()> {
+        sleep(Duration::from_millis(10));
+
         Ok(())
     }
 }

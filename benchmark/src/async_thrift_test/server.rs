@@ -1,3 +1,6 @@
+use std::time::Duration;
+
+use async_std::task::sleep;
 use async_trait::async_trait;
 
 use async_thrift::protocol::async_binary::{
@@ -5,10 +8,8 @@ use async_thrift::protocol::async_binary::{
 };
 use async_thrift::server;
 use async_thrift::transport::async_buffered::{
-    TAsyncBufferedReadTransportFactory,
-    TAsyncBufferedWriteTransportFactory,
+    TAsyncBufferedReadTransportFactory, TAsyncBufferedWriteTransportFactory,
 };
-
 
 use crate::async_thrift_test::tutorial::{CalculatorSyncHandler, CalculatorSyncProcessor};
 
@@ -34,6 +35,8 @@ struct PartHandler {}
 #[async_trait]
 impl CalculatorSyncHandler for PartHandler {
     async fn handle_ping(&self) -> async_thrift::Result<()> {
+        sleep(Duration::from_millis(10)).await;
+
         Ok(())
     }
 }

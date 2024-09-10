@@ -37,11 +37,11 @@ const ADDR: usize = 7;
 ///
 const DEFAULT_RUN_CLIENT: &str = "true";
 const DEFAULT_RUN_SERVER: &str = "true";
-const DEFAULT_RUN_SYNC: &str = "true";
-const DEFAULT_RUN_ASYNC: &str = "true";
+const DEFAULT_RUN_SYNC: &str = "false";
+const DEFAULT_RUN_ASYNC: &str = "false";
 const DEFAULT_RUN_ASYNC_TOKIO: &str = "true";
-const DEFAULT_THREAD_NUM: &str = "10";
-const DEFAULT_LOOP_NUM: &str = "10000";
+const DEFAULT_THREAD_NUM: &str = "2";
+const DEFAULT_LOOP_NUM: &str = "10";
 const DEFAULT_ADDR: &str = "127.0.0.1:9090";
 
 // run sync server and client
@@ -56,7 +56,7 @@ fn run_sync_both(args: Arc<Vec<String>>) -> Option<TestResult> {
 
         let server = thread::spawn(move || sync_thrift_test::server::run(addr.as_str()));
         // we need to wait the server to run
-        thread::sleep(Duration::from_secs(2));
+        thread::sleep(Duration::from_secs(5));
 
         if args[RUN_CLIENT] != *"true" {
             println!("server is online");
