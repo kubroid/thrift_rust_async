@@ -3,19 +3,21 @@ use std::io;
 
 use async_trait::async_trait;
 
-use super::{AsyncRead, AsyncWrite, TAsyncReadTransport, TAsyncReadTransportFactory, TAsyncWriteTransport, TAsyncWriteTransportFactory};
+use super::{
+    AsyncRead, AsyncWrite, TAsyncReadTransport, TAsyncReadTransportFactory, TAsyncWriteTransport,
+    TAsyncWriteTransportFactory,
+};
 
 /// Default capacity of the read buffer in bytes.
-const READ_CAPACITY: usize = 1024;
+const READ_CAPACITY: usize = 4096;
 
 /// Default capacity of the write buffer in bytes..
-const WRITE_CAPACITY: usize = 1024;
-
+const WRITE_CAPACITY: usize = 4096;
 
 #[derive(Debug)]
 pub struct TAsyncBufferedReadTransport<C>
-    where
-        C: AsyncRead,
+where
+    C: AsyncRead,
 {
     buf: Box<[u8]>,
     pos: usize,
@@ -24,8 +26,8 @@ pub struct TAsyncBufferedReadTransport<C>
 }
 
 impl<C> TAsyncBufferedReadTransport<C>
-    where
-        C: AsyncRead + Send,
+where
+    C: AsyncRead + Send,
 {
     /// Create a `TBufferedTransport` with default-sized internal read and
     /// write buffers that wraps the given `TIoChannel`.
@@ -62,8 +64,8 @@ impl<C> TAsyncBufferedReadTransport<C>
 
 #[async_trait]
 impl<C> AsyncRead for TAsyncBufferedReadTransport<C>
-    where
-        C: AsyncRead + Send,
+where
+    C: AsyncRead + Send,
 {
     async fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         let mut bytes_read = 0;
@@ -89,11 +91,10 @@ impl<C> AsyncRead for TAsyncBufferedReadTransport<C>
     }
 }
 
-
 #[derive(Debug)]
 pub struct TAsyncBufferedWriteTransport<C>
-    where
-        C: AsyncWrite,
+where
+    C: AsyncWrite,
 {
     buf: Vec<u8>,
     cap: usize,
@@ -101,8 +102,8 @@ pub struct TAsyncBufferedWriteTransport<C>
 }
 
 impl<C> TAsyncBufferedWriteTransport<C>
-    where
-        C: AsyncWrite,
+where
+    C: AsyncWrite,
 {
     /// Create a `TBufferedTransport` with default-sized internal read and
     /// write buffers that wraps the given `TIoChannel`.
@@ -129,8 +130,8 @@ impl<C> TAsyncBufferedWriteTransport<C>
 
 #[async_trait]
 impl<C> AsyncWrite for TAsyncBufferedWriteTransport<C>
-    where
-        C: AsyncWrite + Send,
+where
+    C: AsyncWrite + Send,
 {
     async fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         if !buf.is_empty() {

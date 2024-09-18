@@ -80,7 +80,6 @@ impl<T> TAsyncWriteTransportFactory for Box<T>
     }
 }
 
-
 pub trait TAsyncIoChannel: AsyncRead + AsyncWrite {
     /// Split the channel into a readable half and a writable half, where the
     /// readable half implements `io::AsyncRead` and the writable half implements

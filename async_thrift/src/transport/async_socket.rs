@@ -21,7 +21,7 @@ impl TAsyncTcpChannel {
     /// by the created `TAsyncTcpChannel` instance.
     pub fn with_stream(stream: TcpStream) -> TAsyncTcpChannel {
         TAsyncTcpChannel {
-            stream: Option::Some(stream)
+            stream: Option::Some(stream),
         }
     }
 
@@ -35,19 +35,18 @@ impl TAsyncTcpChannel {
 
 impl TAsyncIoChannel for TAsyncTcpChannel {
     fn split(&self) -> crate::Result<(AsyncReadHalf<Self>, AsyncWriteHalf<Self>)>
-        where
-            Self: Sized,
+    where
+        Self: Sized,
     {
         let read_half = AsyncReadHalf::new(TAsyncTcpChannel {
-            stream: self.stream.clone()
+            stream: self.stream.clone(),
         });
         let write_half = AsyncWriteHalf::new(TAsyncTcpChannel {
-            stream: self.stream.clone()
+            stream: self.stream.clone(),
         });
         Result::Ok((read_half, write_half))
     }
 }
-
 
 #[async_trait]
 impl AsyncRead for TAsyncTcpChannel {
@@ -88,4 +87,3 @@ impl AsyncWrite for TAsyncTcpChannel {
         }
     }
 }
-

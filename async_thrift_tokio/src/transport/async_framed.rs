@@ -7,7 +7,10 @@ use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 
 use crate::transport::{AsyncRead, AsyncWrite};
 
-use super::{TAsyncReadTransport, TAsyncReadTransportFactory, TAsyncWriteTransport, TAsyncWriteTransportFactory};
+use super::{
+    TAsyncReadTransport, TAsyncReadTransportFactory, TAsyncWriteTransport,
+    TAsyncWriteTransportFactory,
+};
 
 /// Default capacity of the read buffer in bytes.
 const READ_CAPACITY: usize = 4096;
@@ -41,8 +44,8 @@ const WRITE_CAPACITY: usize = 4096;
 /// ```
 #[derive(Debug)]
 pub struct TAsyncFramedReadTransport<C>
-    where
-        C: AsyncRead,
+where
+    C: AsyncRead,
 {
     buf: Vec<u8>,
     pos: usize,
@@ -51,8 +54,8 @@ pub struct TAsyncFramedReadTransport<C>
 }
 
 impl<C> TAsyncFramedReadTransport<C>
-    where
-        C: AsyncRead,
+where
+    C: AsyncRead,
 {
     /// Create a `TAsyncFramedReadTransport` with a default-sized
     /// internal read buffer that wraps the given `TIoChannel`.
@@ -74,8 +77,8 @@ impl<C> TAsyncFramedReadTransport<C>
 
 #[async_trait]
 impl<C> AsyncRead for TAsyncFramedReadTransport<C>
-    where
-        C: AsyncRead + std::marker::Send
+where
+    C: AsyncRead + std::marker::Send,
 {
     async fn read(&mut self, b: &mut [u8]) -> io::Result<usize> {
         if self.cap - self.pos == 0 {
@@ -126,16 +129,16 @@ impl<C> AsyncRead for TAsyncFramedReadTransport<C>
 /// ```
 #[derive(Debug)]
 pub struct TAsyncFramedWriteTransport<C>
-    where
-        C: AsyncWrite,
+where
+    C: AsyncWrite,
 {
     buf: Vec<u8>,
     channel: C,
 }
 
 impl<C> TAsyncFramedWriteTransport<C>
-    where
-        C: AsyncWrite + std::marker::Send
+where
+    C: AsyncWrite + std::marker::Send,
 {
     /// Create a `TAsyncFramedWriteTransport` with default-sized internal
     /// write buffer that wraps the given `TIoChannel`.
@@ -155,8 +158,8 @@ impl<C> TAsyncFramedWriteTransport<C>
 
 #[async_trait]
 impl<C> AsyncWrite for TAsyncFramedWriteTransport<C>
-    where
-        C: AsyncWrite + std::marker::Send
+where
+    C: AsyncWrite + std::marker::Send,
 {
     async fn write(&mut self, b: &[u8]) -> io::Result<usize> {
         let current_capacity = self.buf.capacity();
@@ -185,7 +188,10 @@ impl<C> AsyncWrite for TAsyncFramedWriteTransport<C>
         // will spin if the underlying channel can't be written to
         let mut byte_index = 0;
         while byte_index < message_size {
-            let nwrite = self.channel.write(&self.buf[byte_index..message_size]).await?;
+            let nwrite = self
+                .channel
+                .write(&self.buf[byte_index..message_size])
+                .await?;
             byte_index = cmp::min(byte_index + nwrite, message_size);
         }
 

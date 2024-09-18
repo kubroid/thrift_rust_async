@@ -64,8 +64,8 @@ pub trait TAsyncWriteTransportFactory {
 }
 
 impl<T> TAsyncReadTransportFactory for Box<T>
-    where
-        T: TAsyncReadTransportFactory,
+where
+    T: TAsyncReadTransportFactory,
 {
     fn create(&self, channel: Box<dyn AsyncRead + Send>) -> Box<dyn TAsyncReadTransport + Send> {
         (**self).create(channel)
@@ -73,8 +73,8 @@ impl<T> TAsyncReadTransportFactory for Box<T>
 }
 
 impl<T> TAsyncWriteTransportFactory for Box<T>
-    where
-        T: TAsyncWriteTransportFactory,
+where
+    T: TAsyncWriteTransportFactory,
 {
     fn create(&self, channel: Box<dyn AsyncWrite + Send>) -> Box<dyn TAsyncWriteTransport + Send> {
         (**self).create(channel)
@@ -90,16 +90,18 @@ pub trait TAsyncIoChannel: AsyncRead + AsyncWrite {
     /// Returned halves may share the underlying OS channel or buffer resources.
     /// Implementations **should ensure** that these two halves can be safely
     /// used independently by concurrent threads.
-    fn split(&mut self) -> crate::Result<(AsyncReadHalf<OwnedReadHalf>, AsyncWriteHalf<OwnedWriteHalf>)>
-        where
-            Self: Sized;
+    fn split(
+        &mut self,
+    ) -> crate::Result<(AsyncReadHalf<OwnedReadHalf>, AsyncWriteHalf<OwnedWriteHalf>)>
+    where
+        Self: Sized;
 }
 
 // The readable half of an object returned from `TIoChannel::split`.
 #[derive(Debug)]
 pub struct AsyncReadHalf<C>
-    where
-        C: AsyncRead,
+where
+    C: AsyncRead,
 {
     handle: C,
 }
@@ -107,15 +109,15 @@ pub struct AsyncReadHalf<C>
 /// The writable half of an object returned from `TIoChannel::split`.
 #[derive(Debug)]
 pub struct AsyncWriteHalf<C>
-    where
-        C: AsyncWrite,
+where
+    C: AsyncWrite,
 {
     handle: C,
 }
 
 impl<C> AsyncReadHalf<C>
-    where
-        C: AsyncRead,
+where
+    C: AsyncRead,
 {
     /// Create a `AsyncReadHalf` associated with readable `handle`
     pub fn new(handle: C) -> AsyncReadHalf<C> {
@@ -124,8 +126,8 @@ impl<C> AsyncReadHalf<C>
 }
 
 impl<C> AsyncWriteHalf<C>
-    where
-        C: AsyncWrite,
+where
+    C: AsyncWrite,
 {
     /// Create a `AsyncWriteHalf` associated with writable `handle`
     pub fn new(handle: C) -> AsyncWriteHalf<C> {
@@ -135,8 +137,8 @@ impl<C> AsyncWriteHalf<C>
 
 #[async_trait]
 impl<C> AsyncRead for AsyncReadHalf<C>
-    where
-        C: AsyncRead + std::marker::Send,
+where
+    C: AsyncRead + std::marker::Send,
 {
     async fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         self.handle.read(buf).await
@@ -145,8 +147,8 @@ impl<C> AsyncRead for AsyncReadHalf<C>
 
 #[async_trait]
 impl<C> AsyncWrite for AsyncWriteHalf<C>
-    where
-        C: AsyncWrite + std::marker::Send,
+where
+    C: AsyncWrite + std::marker::Send,
 {
     async fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         self.handle.write(buf).await
@@ -158,8 +160,8 @@ impl<C> AsyncWrite for AsyncWriteHalf<C>
 }
 
 impl<C> Deref for AsyncReadHalf<C>
-    where
-        C: AsyncRead,
+where
+    C: AsyncRead,
 {
     type Target = C;
 
@@ -169,8 +171,8 @@ impl<C> Deref for AsyncReadHalf<C>
 }
 
 impl<C> DerefMut for AsyncReadHalf<C>
-    where
-        C: AsyncRead,
+where
+    C: AsyncRead,
 {
     fn deref_mut(&mut self) -> &mut C {
         &mut self.handle
@@ -178,8 +180,8 @@ impl<C> DerefMut for AsyncReadHalf<C>
 }
 
 impl<C> Deref for AsyncWriteHalf<C>
-    where
-        C: AsyncWrite,
+where
+    C: AsyncWrite,
 {
     type Target = C;
 
@@ -189,8 +191,8 @@ impl<C> Deref for AsyncWriteHalf<C>
 }
 
 impl<C> DerefMut for AsyncWriteHalf<C>
-    where
-        C: AsyncWrite,
+where
+    C: AsyncWrite,
 {
     fn deref_mut(&mut self) -> &mut C {
         &mut self.handle
