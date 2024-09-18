@@ -32,7 +32,7 @@ struct PartHandler {}
 #[async_trait]
 impl CalculatorSyncHandler for PartHandler {
     async fn handle_ping(&self) -> async_thrift_tokio::Result<()> {
-        tokio::time::sleep(tokio::time::Duration::from_millis(10)).await;
+        //tokio::time::sleep(tokio::time::Duration::from_millis(10)).await;
         //async_std::task::sleep(std::time::Duration::from_millis(10)).await;
         Ok(())
     }

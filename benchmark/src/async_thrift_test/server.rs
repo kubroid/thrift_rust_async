@@ -35,7 +35,7 @@ struct PartHandler {}
 #[async_trait]
 impl CalculatorSyncHandler for PartHandler {
     async fn handle_ping(&self) -> async_thrift::Result<()> {
-        sleep(Duration::from_millis(10)).await;
+        //sleep(Duration::from_millis(10)).await;
 
         Ok(())
     }

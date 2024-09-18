@@ -51,7 +51,7 @@ struct PartHandler;
 
 impl CalculatorSyncHandler for PartHandler {
     fn handle_ping(&self) -> thrift::Result<()> {
-        sleep(Duration::from_millis(10));
+        //sleep(Duration::from_millis(10));
 
         Ok(())
     }
